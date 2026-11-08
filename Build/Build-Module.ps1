@@ -90,7 +90,8 @@ Build-Module @BuildParameters {
         New-ConfigurationModule -Type ExternalModule -Name $Module
     }
 
-    New-ConfigurationModuleSkip -IgnoreFunctionName 'Clear-Host', 'Pause'
+    # The ConvertTo-ConsoleColor and Get-TrueColor* helpers are nested in Show-BTLogo (PX2PS output). The build analyzer treats them as missing external commands.
+    New-ConfigurationModuleSkip -IgnoreFunctionName 'Clear-Host', 'Pause', 'ConvertTo-ConsoleColor', 'Get-TrueColorFg', 'Get-TrueColorBg'
 
     $ConfigurationFormat = [ordered] @{
         RemoveComments                              = $false
