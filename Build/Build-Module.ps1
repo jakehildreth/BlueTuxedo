@@ -44,7 +44,12 @@ Import-Module -Name PSPublishModule -Force
 
 $CopyrightYear = if ($Calver) { $CalVer.Split('.')[0] } else { (Get-Date -Format yyyy) }
 
-Build-Module -ModuleName 'BlueTuxedo' {
+# In CI, fail the script when the build fails. Without -ExitCode, Build-Module only prints
+# "Module Build Failed" and returns, so the workflow would report success.
+$BuildParameters = @{ ModuleName = 'BlueTuxedo' }
+if ($env:GITHUB_ACTIONS) { $BuildParameters['ExitCode'] = $true }
+
+Build-Module @BuildParameters {
     # Usual defaults as per standard module
     $Manifest = [ordered] @{
         ModuleVersion        = if ($Calver) { $CalVer } else { (Get-Date -Format yyyy.M.dHHmm -AsUTC) }
@@ -130,7 +135,13 @@ Build-Module -ModuleName 'BlueTuxedo' {
     # configuration for documentation, at the same time it enables documentation processing
     New-ConfigurationDocumentation -Enable:$false -StartClean -UpdateWhenNew -PathReadme 'Docs\Readme.md' -Path 'Docs'
 
-    New-ConfigurationImportModule -ImportSelf -ImportRequiredModules
+    # The CI runner loads DhcpServer through the Windows PowerShell compatibility layer, which fails
+    # with "Failed to generate proxies for remote module". Skip importing required modules there.
+    if ($env:GITHUB_ACTIONS) {
+        New-ConfigurationImportModule -ImportSelf
+    } else {
+        New-ConfigurationImportModule -ImportSelf -ImportRequiredModules
+    }
 
     New-ConfigurationBuild -Enable:$true -SignModule:$false -DeleteTargetModuleBeforeBuild -MergeModuleOnBuild -UseWildcardForFunctions
 
