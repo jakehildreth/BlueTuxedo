@@ -11,7 +11,12 @@ function Invoke-BlueTuxedo {
     )
 
     if ($Demo) { Clear-Host }
-    Show-BTLogo -Version '2024.10'
+    $Module = $MyInvocation.MyCommand.Module
+    $ModuleVersion = if ($Module) {
+        $Prerelease = $Module.PrivateData.PSData.Prerelease
+        if ($Prerelease) { "$($Module.Version)-$Prerelease" } else { "$($Module.Version)" }
+    }
+    Show-BTLogo -Version $ModuleVersion
 
     $Domains = Get-BTTarget -Forest $Forest -InputPath $InputPath
 
